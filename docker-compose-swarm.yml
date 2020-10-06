@@ -3,7 +3,7 @@ version: '3.8'
 services:
   nginx:
     build: ./nginx
-    image: docker-tor-nginx:${VERSION}
+    image: harbor01.cssnr.com/shane/docker-tor-nginx:${VERSION}
     deploy:
       mode: global
 
@@ -12,7 +12,7 @@ services:
       context: ./tor
       args:
         DOCKER_PORT: ${DOCKER_PORT}
-    image: docker-tor-tor:${VERSION}
+    image: harbor01.cssnr.com/shane/docker-tor-tor:${VERSION}
     env_file: ${ENV_FILE}
     deploy:
       replicas: 1
