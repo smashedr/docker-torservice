@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  nginx:
+    build: ./nginx
+    image: docker-tor-nginx:${VERSION}
+    deploy:
+      mode: global
+
+  tor:
+    build:
+      context: ./tor
+      args:
+        DOCKER_PORT: ${DOCKER_PORT}
+    image: docker-tor-tor:${VERSION}
+    env_file: ${ENV_FILE}
+    deploy:
+      replicas: 1
+    volumes:
+      - data_dir:/data
+    ports:
+      - "${DOCKER_PORT}:${DOCKER_PORT}"
+
+volumes:
+  data_dir:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=${NFS_HOST},rw"
+      device: ":/data/docker/${NFS_DIRECTORY}"
