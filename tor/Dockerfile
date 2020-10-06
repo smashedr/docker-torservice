@@ -8,9 +8,8 @@ RUN apk add --update --no-cache \
     linux-headers \
     tor
 
-RUN mkdir /data && chmod 0700 /data
+RUN -p mkdir /data/tor && chmod 0700 /data/tor
 ADD torrc /etc/tor/torrc
-RUN sed -i "s/DOCKER_PORT/${DOCKER_PORT}/" /etc/tor/torrc && \
-    cat /etc/tor/torrc
+RUN sed -i "s/DOCKER_PORT/${DOCKER_PORT}/" /etc/tor/torrc
 
 ENTRYPOINT ["tor"]
