@@ -11,19 +11,14 @@ pipeline {
         timeout(time: 1, unit: 'HOURS')
     }
     environment {
-        DEV_PORT = '13760'
-        PROD_PORT = '13761'
-        DISCORD_ID = "smashed-alerts"
+        DISCORD_ID   = "smashed-alerts"
         COMPOSE_FILE = "docker-compose-swarm.yml"
 
         BUILD_CAUSE = getBuildCause()
         VERSION = getVersion("${GIT_BRANCH}")
         GIT_ORG = getGitGroup("${GIT_URL}")
         GIT_REPO = getGitRepo("${GIT_URL}")
-
-        BASE_NAME = "${GIT_ORG}-${GIT_REPO}"
-        SERVICE_NAME = "${BASE_NAME}"
-        NFS_HOST = "nfs01.cssnr.com"
+        REPO_ORG = "public"
     }
     stages {
         stage('Init') {
@@ -31,14 +26,13 @@ pipeline {
                 echo "\n--- Build Details ---\n" +
                         "GIT_URL:       ${GIT_URL}\n" +
                         "JOB_NAME:      ${JOB_NAME}\n" +
-                        "SERVICE_NAME:  ${SERVICE_NAME}\n" +
-                        "BASE_NAME:     ${BASE_NAME}\n" +
                         "BUILD_CAUSE:   ${BUILD_CAUSE}\n" +
                         "GIT_BRANCH:    ${GIT_BRANCH}\n" +
-                        "VERSION:       ${VERSION}\n"
+                        "VERSION:       ${VERSION}\n" +
+                        "GIT_ORG:       ${GIT_ORG}\n" +
+                        "GIT_REPO:      ${GIT_REPO}\n"
                 verifyBuild()
                 sendDiscord("${DISCORD_ID}", "Pipeline Started by: ${BUILD_CAUSE}")
-                getConfigs("${SERVICE_NAME}")   // use this to get service configs from deploy-configs
             }
         }
         stage('Dev Deploy') {
@@ -48,22 +42,17 @@ pipeline {
                 }
             }
             environment {
-                ENV_FILE = "deploy-configs/services/${SERVICE_NAME}/dev.env"
-                STACK_NAME = "dev_${BASE_NAME}"
-                DOCKER_PORT = "${DEV_PORT}"
-                NFS_DIRECTORY = "${STACK_NAME}"
+                BUILD_TAG = "${REPO_ORG}/${GIT_REPO}:${VERSION}"
             }
             steps {
-                echo "\n--- Starting Dev Deploy ---\n" +
-                        "STACK_NAME:    ${STACK_NAME}\n" +
-                        "DOCKER_PORT:   ${DOCKER_PORT}\n" +
-                        "NFS_DIRECTORY: ${NFS_DIRECTORY}\n" +
-                        "ENV_FILE:      ${ENV_FILE}\n"
-                sendDiscord("${DISCORD_ID}", "Dev Deploy Started")
-                setupNfs("${STACK_NAME}")
-                stackPush("${COMPOSE_FILE}")
-                stackDeploy("${COMPOSE_FILE}", "${STACK_NAME}")
-                sendDiscord("${DISCORD_ID}", "Dev Deploy Finished")
+                echo "\n--- Starting Dev Build ---\n" +
+                        "VERSION:       ${VERSION}\n" +
+                        "GIT_ORG:       ${GIT_ORG}\n" +
+                        "GIT_BRANCH:    ${GIT_BRANCH}\n" +
+                        "BUILD_TAG:     ${BUILD_TAG}\n"
+                sendDiscord("${DISCORD_ID}", "Dev Build Started for: ${BUILD_TAG}")
+                buildPush("${BUILD_TAG}")
+                sendDiscord("${DISCORD_ID}", "Dev Push Finished for: ${BUILD_TAG}")
             }
         }
         stage('Prod Deploy') {
@@ -74,22 +63,17 @@ pipeline {
                 }
             }
             environment {
-                ENV_FILE = "deploy-configs/services/${SERVICE_NAME}/prod.env"
-                STACK_NAME = "prod_${BASE_NAME}"
-                DOCKER_PORT = "${PROD_PORT}"
-                NFS_DIRECTORY = "${STACK_NAME}"
+                BUILD_TAG = "${REPO_ORG}/${GIT_REPO}:${VERSION}"
             }
             steps {
-                echo "\n--- Starting Prod Deploy ---\n" +
-                        "STACK_NAME:    ${STACK_NAME}\n" +
-                        "DOCKER_PORT:   ${DOCKER_PORT}\n" +
-                        "NFS_DIRECTORY: ${NFS_DIRECTORY}\n" +
-                        "ENV_FILE:      ${ENV_FILE}\n"
-                sendDiscord("${DISCORD_ID}", "Prod Deploy Started")
-                setupNfs("${STACK_NAME}")
-                stackPush("${COMPOSE_FILE}")
-                stackDeploy("${COMPOSE_FILE}", "${STACK_NAME}")
-                sendDiscord("${DISCORD_ID}", "Prod Deploy Finished")
+                echo "\n--- Starting Prod Build ---\n" +
+                        "VERSION:       ${VERSION}\n" +
+                        "GIT_ORG:       ${GIT_ORG}\n" +
+                        "GIT_BRANCH:    ${GIT_BRANCH}\n" +
+                        "BUILD_TAG:     ${BUILD_TAG}\n"
+                sendDiscord("${DISCORD_ID}", "Prod Build Started for: ${BUILD_TAG}")
+                buildPush("${BUILD_TAG}")
+                sendDiscord("${DISCORD_ID}", "Prod Push Finished for: ${BUILD_TAG}")
             }
         }
     }

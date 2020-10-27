@@ -1,0 +1,2 @@
+HiddenServiceDir /tor
+HiddenServicePort 80 nginx:80

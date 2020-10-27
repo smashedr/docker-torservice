@@ -1,3 +1,0 @@
-HiddenServiceDir /data/tor
-HiddenServicePort 80 nginx:8080
-SOCKSPort DOCKER_PORT
